@@ -1,0 +1,54 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web;
+using System.Web.Mvc;
+using Zxly.Common.Utilities;
+
+namespace Zxly.Common.UI.Controller
+{
+    /// <summary>
+    /// 异常处理控制器
+    /// </summary>
+    public class ErrorController : System.Web.Mvc.Controller
+    {
+        /// <summary>
+        /// 显示异常信息
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult Index()
+        {
+            HttpContext.Response.StatusCode = 500;
+            //生成日志文件的路径，如果已经存在添加用标识加以区分
+            DateTime now = DateTime.Now;
+            long number = now.Ticks;
+            string path = System.Web.HttpContext.Current.Server.MapPath("/log/");
+            if (!Directory.Exists(path))
+              Directory.CreateDirectory(path);
+              
+            string filePath = path + ZxlyConfig.Instance.Id + "_" + number + "_1.txt";
+            while (System.IO.File.Exists(filePath))
+            {
+                number++;
+                filePath = path + ZxlyConfig.Instance.Id + "_" + number + "_1.txt";
+            }
+            FileOperation.WriteFile(filePath, HttpContext.Error.ToString());
+
+            ViewBag.ExceptionNumber = number;
+
+            ViewBag.SystemId = ZxlyConfig.Instance.Id;
+            ViewBag.HandleState = "1";
+
+            ViewData["Title"] = "服务器错误";
+
+            var errorInfo = new HandleErrorInfo(HttpContext.Error, "Error", "Error");
+
+            Server.ClearError();
+
+            return View("Error", errorInfo);
+        }
+    }
+}
